@@ -411,6 +411,19 @@ bool Is_Not_Enemies_In_Screen(Enemy enemies[])
     return c == 5;
 }
 
+void Get_Time(int & new_time, int & last_time, int & dt)
+{
+    new_time = SDL_GetTicks();
+    dt = new_time - last_time;
+    if (dt < 16)
+    {
+        SDL_Delay(16 - dt);
+        new_time = SDL_GetTicks();
+        dt = new_time - last_time;
+    }
+    last_time = new_time;
+}
+
 int main(int argc, char* argv[]) 
 {
     system("chcp 1251 > 0");
@@ -428,7 +441,7 @@ int main(int argc, char* argv[])
     const int n = 6;
     int score_mass[n] = { 0 };
     Get_Max_Score(score_mass, n, "score_records.txt");
-    Get_Enemies_In_Wave(wave_1, wave_2, "level_1.txt");
+    Get_Enemies_In_Wave(wave_1, wave_2, "level_4.txt");
     
     do
     {
@@ -563,15 +576,7 @@ int main(int argc, char* argv[])
 
             if (is_running)
             {
-                new_time = SDL_GetTicks();
-                dt = new_time - last_time;
-                if (dt < 16)
-                {
-                    SDL_Delay(16 - dt);
-                    new_time = SDL_GetTicks();
-                    dt = new_time - last_time;
-                }
-                last_time = new_time;
+                Get_Time(new_time, last_time, dt);
 
                 if (not Is_Cooldown_Now(bullet, dt))
                     is_cooldown = false;
@@ -627,15 +632,7 @@ int main(int argc, char* argv[])
             }
             if (is_record)
             {
-                new_time = SDL_GetTicks();
-                dt = new_time - last_time;
-                if (dt < 16)
-                {
-                    SDL_Delay(16 - dt);
-                    new_time = SDL_GetTicks();
-                    dt = new_time - last_time;
-                }
-                last_time = new_time;
+                Get_Time(new_time, last_time, dt);
 
                 over += dt;
                 if (over >= 10000)
