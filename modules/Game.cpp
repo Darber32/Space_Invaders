@@ -178,6 +178,7 @@ void Collision_Player_And_Enemy(Player& ship, Enemy enemy[], SDL_Rect ** exp, in
                         Start_Damage_Explosion(enemy[i].enemy_mass[j], exp[i][j], frame[i][j], cur_time[i][j]);
                     else
                         Start_Explosion(enemy[i].enemy_mass[j], exp[i][j], frame[i][j], cur_time[i][j]);
+                    enemy[i].enemy_mass[j].y = win_height + 1;
                 }
     }
 }
@@ -200,6 +201,7 @@ void Collision_Bullet_And_Enemy(Player& ship, weapon& bullet, Enemy enemy[], SDL
                                         Start_Damage_Explosion(enemy[i].enemy_mass[j], exp[i][j], frame[i][j], cur_time[i][j]);
                                     else
                                         Start_Explosion(enemy[i].enemy_mass[j], exp[i][j], frame[i][j], cur_time[i][j]);
+                                    enemy[i].enemy_mass[j].y = win_height + 1;
                                 }
                                 bullet.active_bullet[k] = 0;
                             }
@@ -440,8 +442,11 @@ int main(int argc, char* argv[])
     int score = 0, ship_type = 0, key = 0;
     const int n = 6;
     int score_mass[n] = { 0 };
+    int level = 1;
+    char level_char[12] = "level_.txt";
+    sprintf_s(level_char, "level_%i.txt", level);
     Get_Max_Score(score_mass, n, "score_records.txt");
-    Get_Enemies_In_Wave(wave_1, wave_2, "level_4.txt");
+    Get_Enemies_In_Wave(wave_1, wave_2, level_char);
     
     do
     {
@@ -542,13 +547,13 @@ int main(int argc, char* argv[])
                 }
             }
 
-            if (ship.hp <= 0)
+            /*if (ship.hp <= 0)
             {
                 score_mass[n - 1] = score;
                 Sort_Records(score_mass, n);
                 is_game = false;
                 is_record = true;
-            }
+            }*/
 
             is_not_enemies = Is_Not_Enemies_In_Screen(enemies);
             if (is_not_enemies and not is_new_wave)
@@ -563,10 +568,31 @@ int main(int argc, char* argv[])
                     collision[i] = 0;
                 is_new_wave = true;
                 is_not_enemies = false;
+                new_wave_time = 0;
             }
 
-            //is_not_enemies = Is_Not_Enemies_In_Screen(enemies);
             if (is_not_enemies and is_new_wave)
+                new_wave_time += dt;
+
+            if (is_new_wave and new_wave_time >= 5000)
+            {
+                is_new_wave = false;
+                new_wave_time - 0;
+                level++;
+                if (level <= 4)
+                {
+                    sprintf_s(level_char, "level_%i.txt", level);
+                    Get_Enemies_In_Wave(wave_1, wave_2, level_char);
+                    Level(enemies, wave_1);
+                    SDL_DestroyTexture(exp);
+                    exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
+                    for (int i = 0; i < 100; i++)
+                        collision[i] = 0;
+                    new_wave_time = 0;
+                }
+            }
+
+            if (level > 4)
             {
                 score_mass[n - 1] = score;
                 Sort_Records(score_mass, n);
@@ -695,10 +721,8 @@ int main(int argc, char* argv[])
     SDL_DestroyTexture(bullet.texture);
     SDL_DestroyTexture(enemy_bullet.texture);
     SDL_DestroyTexture(exp);
-    if (planet.texture != nullptr)
-        SDL_DestroyTexture(planet.texture);
-    if (hp_texture != nullptr)
-        SDL_DestroyTexture(hp_texture);
+    SDL_DestroyTexture(planet.texture);
+    SDL_DestroyTexture(hp_texture);
     SDL_DestroyTexture(score_texture);
     SDL_DestroyTexture(first);
     SDL_DestroyTexture(second);
