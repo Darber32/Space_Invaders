@@ -67,7 +67,7 @@ void Player_Movement(const Uint8 * state, Player& ship, int dt, Planet & planet,
             if (stars_mass[i].x >= win_width)
                 stars_mass[i].x = 1 - stars_mass[i].w;
         }
-        planet.model.x += ship.speed * planet.speed_x * dt / 1000;
+        planet.model.x += ship.speed * planet.speed_x * dt * 2 / 1000;
     }
 }
 
