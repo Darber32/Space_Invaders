@@ -426,6 +426,40 @@ void Get_Time(int & new_time, int & last_time, int & dt)
     last_time = new_time;
 }
 
+void Level_Start(bool& is_not_enemies, bool& is_new_wave, int& new_wave_time, int dt, Enemy enemies[], int wave_2[], SDL_Texture* exp, SDL_Rect** explosion_model, SDL_Rect** pos, 
+    int** frame, int** cur_time, int** stop_animation, int collision[], int& level_choose, bool& is_game, int next, bool & get_enemies)
+{
+    is_not_enemies = Is_Not_Enemies_In_Screen(enemies);
+    if (is_not_enemies and not is_new_wave)
+        new_wave_time += dt;
+
+    if (new_wave_time >= 3000 and not is_new_wave)
+    {
+        Level(enemies, wave_2);
+        SDL_DestroyTexture(exp);
+        exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
+        for (int i = 0; i < 100; i++)
+            collision[i] = 0;
+        is_new_wave = true;
+        is_not_enemies = false;
+        new_wave_time = 0;
+    }
+
+    if (is_not_enemies and is_new_wave)
+        new_wave_time += dt;
+
+    if (is_new_wave and new_wave_time >= 5000)
+    {
+        is_new_wave = false;
+        new_wave_time = 0;
+        level_choose = 0;
+        is_game = false;
+        if (next == 0)
+            next++;
+        get_enemies = false;
+    }
+}
+
 int main(int argc, char* argv[]) 
 {
     system("chcp 1251 > 0");
@@ -447,7 +481,7 @@ int main(int argc, char* argv[])
     sprintf_s(level_char, "level_%i.txt", level);
     Get_Max_Score(score_mass, n, "score_records.txt");
     Get_Enemies_In_Wave(wave_1, wave_2, level_char);
-    
+    int level_1 = 1, level_2 = 0, level_3 = 0, level_4 = 0, level_5 = 0, level_choose;
     do
     {
         printf("Новая игра - 1.\n\
@@ -478,6 +512,14 @@ int main(int argc, char* argv[])
         Load_Player_Stats(ship, "save_1.txt", ship_type);
         break;
     }
+
+    do
+    {
+        printf("Введите номер уровня: ");
+        scanf_s("%i", &level_choose);
+        if (level_choose == 2 and level_2 == 0 or level_choose == 3 and level_3 == 0 or level_choose == 4 and level_4 == 0 or level_choose == 5 and level_5 == 0)
+            printf("Уровень не открыт. Пройдите предыдущие, чтобы открыть его\n");
+    } while ((level_choose < 1 or level_choose > 5) or (level_choose == 2 and level_2 == 0 or level_choose == 3 and level_3 == 0 or level_choose == 4 and level_4 == 0 or level_choose == 5 and level_5 == 0));
     Create_Stars(stars_number, stars_mass, speed);
     bullet_create(bullet);
     Enemy_Bullet_Create(enemy_bullet);
@@ -490,7 +532,7 @@ int main(int argc, char* argv[])
     int** cur_time = (int**)malloc(sizeof(int*) * 5);
     int** stop_animation = (int**)malloc(sizeof(int*) * 5);
     int collision[100] = { 0 };
-    SDL_Texture * exp = New_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
+    SDL_Texture* exp = New_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
     TTF_Font* hp_font = TTF_OpenFont("calibri.ttf", 25);
     SDL_Texture* hp_texture = NULL;
     SDL_Rect hp_rect = { 0, 0, 0, 0 };
@@ -512,7 +554,7 @@ int main(int argc, char* argv[])
     char fourth_score[50] = "FOURTH: %i";
     char fifth_score[50] = "FIFTH: %i";
     int over = 0;
-    bool is_not_enemies = false;
+    bool is_not_enemies = false, get_enemies = false;
     while (is_running)
     {
         while (is_game)
@@ -555,50 +597,163 @@ int main(int argc, char* argv[])
                 is_record = true;
             }*/
 
-            is_not_enemies = Is_Not_Enemies_In_Screen(enemies);
-            if (is_not_enemies and not is_new_wave)
-                new_wave_time += dt;
-
-            if (new_wave_time >= 3000 and not is_new_wave)
+            switch (level_choose)
             {
-                Level(enemies, wave_2);
-                SDL_DestroyTexture(exp);
-                exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
-                for (int i = 0; i < 100; i++)
-                    collision[i] = 0;
-                is_new_wave = true;
-                is_not_enemies = false;
-                new_wave_time = 0;
-            }
-
-            if (is_not_enemies and is_new_wave)
-                new_wave_time += dt;
-
-            if (is_new_wave and new_wave_time >= 5000)
-            {
-                is_new_wave = false;
-                new_wave_time - 0;
-                level++;
-                if (level <= 4)
+            case 0:
+                do
                 {
-                    sprintf_s(level_char, "level_%i.txt", level);
-                    Get_Enemies_In_Wave(wave_1, wave_2, level_char);
+                    printf("Введите номер уровня: ");
+                    scanf_s("%i", &level_choose);
+                    if (level_choose == 2 and level_2 == 0 or level_choose == 3 and level_3 == 0 or level_choose == 4 and level_4 == 0 or level_choose == 5 and level_5 == 0)
+                        printf("Уровень не открыт. Пройдите предыдущие, чтобы открыть его\n");
+                } while ((level_choose < 1 or level_choose > 5) or (level_choose == 2 and level_2 == 0 or level_choose == 3 and level_3 == 0 or level_choose == 4 and level_4 == 0 or level_choose == 5 and level_5 == 0));
+                is_game = true;
+                break;
+            case 1:
+                if (not get_enemies)
+                {
+                    Get_Enemies_In_Wave(wave_1, wave_2, "level_1.txt");
                     Level(enemies, wave_1);
+                    SDL_DestroyTexture(exp);
+                    exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
+                    get_enemies = true;
+                }
+
+                if (new_wave_time >= 3000 and not is_new_wave)
+                {
+                    Level(enemies, wave_2);
                     SDL_DestroyTexture(exp);
                     exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
                     for (int i = 0; i < 100; i++)
                         collision[i] = 0;
+                    is_new_wave = true;
+                    is_not_enemies = false;
                     new_wave_time = 0;
                 }
-            }
 
-            if (level > 4)
-            {
-                score_mass[n - 1] = score;
-                Sort_Records(score_mass, n);
-                is_game = false;
-                is_record = true;
+                if (is_new_wave and new_wave_time >= 5000)
+                {
+                    is_new_wave = false;
+                    new_wave_time = 0;
+                    level_choose = 0;
+                    if (level_2 == 0)
+                        level_2++;
+                    get_enemies = false;
+                }
+                break;
+            case 2:
+                if (not get_enemies)
+                {
+                    Get_Enemies_In_Wave(wave_1, wave_2, "level_2.txt");
+                    Level(enemies, wave_1);
+                    SDL_DestroyTexture(exp);
+                    exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
+                    get_enemies = true;
+                }
+
+                if (new_wave_time >= 3000 and not is_new_wave)
+                {
+                    Level(enemies, wave_2);
+                    SDL_DestroyTexture(exp);
+                    exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
+                    for (int i = 0; i < 100; i++)
+                        collision[i] = 0;
+                    is_new_wave = true;
+                    is_not_enemies = false;
+                    new_wave_time = 0;
+                }
+
+                if (is_new_wave and new_wave_time >= 5000)
+                {
+                    is_new_wave = false;
+                    new_wave_time = 0;
+                    level_choose = 0;
+                    if (level_3 == 0)
+                        level_3++;
+                    get_enemies = false;
+                }
+                break;
+            case 3:
+                if (not get_enemies)
+                {
+                    Get_Enemies_In_Wave(wave_1, wave_2, "level_3.txt");
+                    Level(enemies, wave_1);
+                    SDL_DestroyTexture(exp);
+                    exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
+                    get_enemies = true;
+                }
+
+                if (new_wave_time >= 3000 and not is_new_wave)
+                {
+                    Level(enemies, wave_2);
+                    SDL_DestroyTexture(exp);
+                    exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
+                    for (int i = 0; i < 100; i++)
+                        collision[i] = 0;
+                    is_new_wave = true;
+                    is_not_enemies = false;
+                    new_wave_time = 0;
+                }
+
+                if (is_new_wave and new_wave_time >= 5000)
+                {
+                    is_new_wave = false;
+                    new_wave_time = 0;
+                    level_choose = 0;
+                    if (level_4 == 0)
+                        level_4++;
+                    get_enemies = false;
+                }
+                break;
+            case 4:
+                if (not get_enemies)
+                {
+                    Get_Enemies_In_Wave(wave_1, wave_2, "level_4.txt");
+                    Level(enemies, wave_1);
+                    SDL_DestroyTexture(exp);
+                    exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
+                    get_enemies = true;
+                }
+
+                if (new_wave_time >= 3000 and not is_new_wave)
+                {
+                    Level(enemies, wave_2);
+                    SDL_DestroyTexture(exp);
+                    exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
+                    for (int i = 0; i < 100; i++)
+                        collision[i] = 0;
+                    is_new_wave = true;
+                    is_not_enemies = false;
+                    new_wave_time = 0;
+                }
+
+                if (is_new_wave and new_wave_time >= 5000)
+                {
+                    is_new_wave = false;
+                    new_wave_time = 0;
+                    level_choose = 0;
+                    if (level_5 == 0)
+                        level_5++;
+                    get_enemies = false;
+                }
+                break;
             }
+           
+            is_not_enemies = Is_Not_Enemies_In_Screen(enemies);
+            if (is_not_enemies and not is_new_wave)
+                new_wave_time += dt;
+            if (is_not_enemies and is_new_wave)
+                new_wave_time += dt;
+
+            /*if (is_new_wave and new_wave_time >= 5000)
+            {
+                is_new_wave = false;
+                new_wave_time = 0;
+                level_choose = 0;
+                if (level_choose == 0)
+                    level_choose++;
+                get_enemies = false;
+            }*/
 
             if (is_running)
             {
