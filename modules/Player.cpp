@@ -71,33 +71,3 @@ void Player_Movement(const Uint8 * state, Player& ship, int dt, Planet & planet,
     }
 }
 
-void Save_Player_Stats(Player ship, const char * filename, int texture)
-{
-    FILE* save = fopen(filename, "w");
-    fprintf_s(save, "%i ", texture);
-    fprintf_s(save, "%i ", ship.max_hp);
-    fprintf_s(save, "%i ", ship.hp);
-    fprintf_s(save, "%i ", ship.money);
-    fprintf_s(save, "%lf ", ship.speed);
-    fclose(save);
-}
-
-void Load_Player_Stats(Player& ship, const char* filename, int &ship_type)
-{
-    FILE* save = fopen(filename, "r");
-    fscanf_s(save, "%i ", &ship_type);
-    switch(ship_type)
-    {
-    case 1:
-        ship.texture = Load_Texture("space_ship.png", &ship.rect);
-        break;
-    case 2:
-        ship.texture = Load_Texture("space_ship_2.png", &ship.rect);
-        break;
-    }
-    fscanf_s(save, "%i ", &ship.max_hp);
-    fscanf_s(save, "%i ", &ship.hp);
-    fscanf_s(save, "%i ", &ship.money);
-    fscanf_s(save, "%lf ", &ship.speed);
-    fclose(save);
-}

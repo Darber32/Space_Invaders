@@ -15,7 +15,3 @@ void Create_Light_Ship(Player& ship);
 void Create_Heavy_Ship(Player& ship);
 
 void Player_Movement(const Uint8* state, Player& ship, int dt, Planet& planet, const int n, SDL_Rect stars_mass[]);
-
-void Save_Player_Stats(Player ship, const char* filename, int texture);
-
-void Load_Player_Stats(Player& ship, const char* filename, int &ship_type);

@@ -460,6 +460,49 @@ void Level_Start(bool& is_not_enemies, bool& is_new_wave, int& new_wave_time, in
     }
 }
 
+void Save(Player ship, const char* filename, int texture, int score, int level_1, int level_2, int level_3, int level_4, int level_5)
+{
+    FILE* save = fopen(filename, "w");
+    fprintf_s(save, "%i ", texture);
+    fprintf_s(save, "%i ", ship.max_hp);
+    fprintf_s(save, "%i ", ship.hp);
+    fprintf_s(save, "%i ", ship.money);
+    fprintf_s(save, "%lf ", ship.speed);
+    fprintf_s(save, "%i\n", score);
+    fprintf_s(save, "%i ", level_1);
+    fprintf_s(save, "%i ", level_2);
+    fprintf_s(save, "%i ", level_3);
+    fprintf_s(save, "%i ", level_4);
+    fprintf_s(save, "%i\n", level_5);
+    fclose(save);
+}
+
+void Load_Save(Player& ship, const char* filename, int& ship_type, int &score, int &level_1, int &level_2, int &level_3, int &level_4, int &level_5)
+{
+    FILE* save = fopen(filename, "r");
+    fscanf_s(save, "%i ", &ship_type);
+    switch (ship_type)
+    {
+    case 1:
+        ship.texture = Load_Texture("space_ship.png", &ship.rect);
+        break;
+    case 2:
+        ship.texture = Load_Texture("space_ship_2.png", &ship.rect);
+        break;
+    }
+    fscanf_s(save, "%i ", &ship.max_hp);
+    fscanf_s(save, "%i ", &ship.hp);
+    fscanf_s(save, "%i ", &ship.money);
+    fscanf_s(save, "%lf ", &ship.speed);
+    fscanf_s(save, "%i\n", &score);
+    fscanf_s(save, "%i ", &level_1);
+    fscanf_s(save, "%i ", &level_2);
+    fscanf_s(save, "%i ", &level_3);
+    fscanf_s(save, "%i ", &level_4);
+    fscanf_s(save, "%i\n", &level_5);
+    fclose(save);
+}
+
 int main(int argc, char* argv[]) 
 {
     system("chcp 1251 > 0");
@@ -509,7 +552,7 @@ int main(int argc, char* argv[])
         }
         break;
     case 2:
-        Load_Player_Stats(ship, "save_1.txt", ship_type);
+        Load_Save(ship, "save_1.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
         break;
     }
 
@@ -589,13 +632,13 @@ int main(int argc, char* argv[])
                 }
             }
 
-            /*if (ship.hp <= 0)
+            if (ship.hp <= 0)
             {
                 score_mass[n - 1] = score;
                 Sort_Records(score_mass, n);
                 is_game = false;
                 is_record = true;
-            }*/
+            }
 
             switch (level_choose)
             {
@@ -870,7 +913,7 @@ int main(int argc, char* argv[])
     score_mass[n - 1] = score;
     Sort_Records(score_mass, n);
     Save_Records(score_mass, n, "score_records.txt");
-    //Save_Player_Stats(ship, "save_1.txt", ship_type);
+    Save(ship, "save_1.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
     Free_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
     SDL_DestroyTexture(ship.texture);
     SDL_DestroyTexture(bullet.texture);
