@@ -524,7 +524,7 @@ int main(int argc, char* argv[])
     sprintf_s(level_char, "level_%i.txt", level);
     Get_Max_Score(score_mass, n, "score_records.txt");
     Get_Enemies_In_Wave(wave_1, wave_2, level_char);
-    int level_1 = 1, level_2 = 0, level_3 = 0, level_4 = 0, level_5 = 0, level_choose;
+    int level_1 = 1, level_2 = 0, level_3 = 0, level_4 = 0, level_5 = 0, level_choose, save_choose = 0;
     do
     {
         printf("Новая игра - 1.\n\
@@ -552,7 +552,23 @@ int main(int argc, char* argv[])
         }
         break;
     case 2:
-        Load_Save(ship, "save_1.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
+        do
+        {
+            printf("Введите ячейку сохранения: ");
+            scanf_s("%i", &save_choose);
+        } while (save_choose < 1 and save_choose > 3);
+        switch (save_choose)
+        {
+        case 1:
+            Load_Save(ship, "save_1.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
+            break;
+        case 2:
+            Load_Save(ship, "save_2.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
+            break;
+        case 3:
+            Load_Save(ship, "save_3.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
+            break;
+        }
         break;
     }
 
@@ -590,12 +606,14 @@ int main(int argc, char* argv[])
     SDL_Texture* third = NULL;
     SDL_Texture* fourth = NULL;
     SDL_Texture* fifth = NULL;
+    SDL_Texture* score_texture_2 = NULL;
     SDL_Rect score_mass_rect[n] = { 0 };
     char first_score[50] = "FIRST: %i";
     char second_score[50] = "SECOND: %i";
     char third_score[50] = "THIRD: %i";
     char fourth_score[50] = "FOURTH: %i";
     char fifth_score[50] = "FIFTH: %i";
+    char cur_score[50] = "CURRENT: %i";
     int over = 0;
     bool is_not_enemies = false, get_enemies = false;
     while (is_running)
@@ -788,16 +806,6 @@ int main(int argc, char* argv[])
             if (is_not_enemies and is_new_wave)
                 new_wave_time += dt;
 
-            /*if (is_new_wave and new_wave_time >= 5000)
-            {
-                is_new_wave = false;
-                new_wave_time = 0;
-                level_choose = 0;
-                if (level_choose == 0)
-                    level_choose++;
-                get_enemies = false;
-            }*/
-
             if (is_running)
             {
                 Get_Time(new_time, last_time, dt);
@@ -868,7 +876,7 @@ int main(int argc, char* argv[])
                     SDL_DestroyTexture(first);
                 first = Load_Texture_Font(first_score, score_font, &score_mass_rect[0], { 255, 255, 255, 255 });
                 score_mass_rect[0].x = win_width / 2 - 50;
-                score_mass_rect[0].y = win_height / 6;
+                score_mass_rect[0].y = win_height / 7;
                 SDL_RenderCopy(ren, first, NULL, &score_mass_rect[0]);
 
                 sprintf_s(second_score, "SECOND: %i", score_mass[1]);
@@ -876,7 +884,7 @@ int main(int argc, char* argv[])
                     SDL_DestroyTexture(second);
                 second = Load_Texture_Font(second_score, score_font, &score_mass_rect[1], { 255, 255, 255, 255 });
                 score_mass_rect[1].x = win_width / 2 - 50;
-                score_mass_rect[1].y = win_height / 6 * 2;
+                score_mass_rect[1].y = win_height / 7 * 2;
                 SDL_RenderCopy(ren, second, NULL, &score_mass_rect[1]);
 
                 sprintf_s(third_score, "THIRD: %i", score_mass[2]);
@@ -884,7 +892,7 @@ int main(int argc, char* argv[])
                     SDL_DestroyTexture(third);
                 third = Load_Texture_Font(third_score, score_font, &score_mass_rect[2], { 255, 255, 255, 255 });
                 score_mass_rect[2].x = win_width / 2 - 50;
-                score_mass_rect[2].y = win_height / 6 * 3;
+                score_mass_rect[2].y = win_height / 7 * 3;
                 SDL_RenderCopy(ren, third, NULL, &score_mass_rect[2]);
 
                 sprintf_s(fourth_score, "FOURTH: %i", score_mass[3]);
@@ -892,7 +900,7 @@ int main(int argc, char* argv[])
                     SDL_DestroyTexture(fourth);
                 fourth = Load_Texture_Font(fourth_score, score_font, &score_mass_rect[3], { 255, 255, 255, 255 });
                 score_mass_rect[3].x = win_width / 2 - 50;
-                score_mass_rect[3].y = win_height / 6 * 4;
+                score_mass_rect[3].y = win_height / 7 * 4;
                 SDL_RenderCopy(ren, fourth, NULL, &score_mass_rect[3]);
 
                 sprintf_s(fifth_score, "FIFTH: %i", score_mass[4]);
@@ -900,8 +908,16 @@ int main(int argc, char* argv[])
                     SDL_DestroyTexture(fifth);
                 fifth = Load_Texture_Font(fifth_score, score_font, &score_mass_rect[4], { 255, 255, 255, 255 });
                 score_mass_rect[4].x = win_width / 2 - 50;
-                score_mass_rect[4].y = win_height / 6 * 5;
+                score_mass_rect[4].y = win_height / 7 * 5;
                 SDL_RenderCopy(ren, fifth, NULL, &score_mass_rect[4]);
+
+                sprintf_s(cur_score, "CURRENT: %i", score);
+                if (score_texture_2 != NULL)
+                    SDL_DestroyTexture(score_texture);
+                score_texture_2 = Load_Texture_Font(cur_score, score_font, &score_mass_rect[5], { 255, 255, 255, 255 });
+                score_mass_rect[5].x = win_width / 2 - 50;
+                score_mass_rect[5].y = win_height / 7 * 6;
+                SDL_RenderCopy(ren, score_texture_2, NULL, &score_mass_rect[5]);
 
                 SDL_RenderPresent(ren);
             }
@@ -909,11 +925,26 @@ int main(int argc, char* argv[])
         if (not is_game and not is_record)
             is_running = false;
     }
-
-    score_mass[n - 1] = score;
+    
     Sort_Records(score_mass, n);
     Save_Records(score_mass, n, "score_records.txt");
-    Save(ship, "save_1.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
+    do
+    {
+        printf("В какую ячейку сохранить: ");
+        scanf_s("%i", &save_choose);
+    } while (save_choose < 1 or save_choose > 3);
+/*    switch (save_choose)
+    {
+    case 1:
+        Save(ship, "save_1.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
+        break;
+    case 2:
+        Save(ship, "save_2.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
+        break;
+    case 3:
+        Save(ship, "save_3.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
+        break;
+    }*/
     Free_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
     SDL_DestroyTexture(ship.texture);
     SDL_DestroyTexture(bullet.texture);
