@@ -14,6 +14,7 @@
 #include "../headers/Background.h"
 #include "../headers/Enemies.h"
 #include "../headers/Weapon.h"
+#include "../headers/Boss.h"
 
 //PlaySound(L"music.wav", NULL, SND_ASYNC | SND_LOOP);
 
@@ -100,7 +101,7 @@ void Change_Window(SDL_Event events)
     }
 }
 
-void Draw(Player& ship, Enemy enemies[], int dt, weapon bullet, Planet &planet, const int n, SDL_Rect stars_mass[], double speed[], Enemy_Bullet & enemy_bullet)
+void Draw(Player& ship, Enemy enemies[], int dt, weapon bullet, Planet &planet, const int n, SDL_Rect stars_mass[], double speed[], Enemy_Bullet & enemy_bullet, Boss & boss)
 {
     SDL_SetRenderDrawColor(ren, 0, 0, 80, 0);
     SDL_RenderClear(ren);
@@ -115,6 +116,7 @@ void Draw(Player& ship, Enemy enemies[], int dt, weapon bullet, Planet &planet, 
     SDL_RenderCopy(ren, ship.texture, NULL, &ship.model);
     bullet_draw(bullet);
     Enemy_Bullet_Draw(enemy_bullet);
+    Boss_Draw(boss);
 
 }
 
@@ -142,6 +144,26 @@ void Explosion_Animation(SDL_Texture* texture, SDL_Rect **pos, SDL_Rect ** model
                     model[i][j] = { 0, 0, 0, 0 };
             }
     }
+}
+
+void Boss_Explosion(SDL_Texture* texture, SDL_Rect** pos, SDL_Rect** model, int** frame, int** cur_time, int dt, int** stop)
+{
+    int max_frame = 10, max_time = 150;
+    for (int i = 0; i < 3; i++)
+                if (stop[0][i] < max_frame - 1)
+                {
+                    cur_time[0][i] += dt;
+                    if (cur_time[0][i] >= max_time)
+                    {
+                        cur_time[0][i] -= max_time;
+                        frame[0][i] = (frame[0][i] + 1) % max_frame;
+                        pos[0][i].x = pos[0][i].w * frame[0][i];
+                        stop[0][i]++;
+                    }
+                    SDL_RenderCopy(ren, texture, &pos[0][i], &model[0][i]);
+                }
+                else
+                    model[0][i] = { 0, 0, 0, 0 };
 }
 
 void Start_Explosion(SDL_Rect old_pos, SDL_Rect& new_pos, int& frame, int& cur_time)
@@ -231,6 +253,60 @@ void Collision_Player_And_Bullet(Player& ship, Enemy_Bullet& bullet)
                     bullet.bullet_mas[i] = { 0, win_width + 1, 0, 0 };
                 }
 
+}
+
+void Collision_Bullet_And_Boss(weapon& bullet, Boss& boss, SDL_Rect* exp, int* frame, int* cur_time, int& score)
+{
+    for (int i = 0; i < bullet.count; i++)
+        if (bullet.active_bullet[i] == 1)
+        {
+            if (bullet.bullet_mas[i].y <= boss.weak_point_left.y + boss.model.h / 3 * 2 - 30 and bullet.bullet_mas[i].y + bullet.size_y >= boss.weak_point_left.y)
+                if (bullet.bullet_mas[i].x <= boss.weak_point_left.x + boss.offset and bullet.bullet_mas[i].x + bullet.size_x >= boss.weak_point_left.x)
+                {
+                    boss.hp_left -= bullet.dmg;
+                    boss.left.w -= boss.offset / 15 * bullet.dmg;
+                    if (boss.left.w < 0)
+                        boss.left.w = 0;
+                    bullet.active_bullet[i] = 0;
+                    if (boss.hp_left <= 0)
+                    {
+                        Start_Explosion(boss.weak_point_left, exp[0], frame[0], cur_time[0]);
+                        boss.rect.x += boss.offset_rect;
+                        boss.rect.w -= boss.offset_rect;
+                        boss.model.x += boss.offset;
+                        boss.model.w -= boss.offset;
+                    }
+                }
+            if (bullet.bullet_mas[i].y <= boss.weak_point_right.y + boss.model.h / 3 * 2 - 30 and bullet.bullet_mas[i].y + bullet.size_y >= boss.weak_point_right.y)
+                if (bullet.bullet_mas[i].x <= boss.weak_point_right.x + boss.offset and bullet.bullet_mas[i].x + bullet.size_x >= boss.weak_point_right.x)
+                {
+                    boss.hp_right -= bullet.dmg;
+                    boss.right.w -= boss.offset / 15 * bullet.dmg;
+                    if (boss.right.w < 0)
+                        boss.right.w = 0;
+                    bullet.active_bullet[i] = 0;
+                    if (boss.hp_right <= 0)
+                    {
+                        Start_Explosion(boss.weak_point_right, exp[1], frame[1], cur_time[1]);
+                        boss.rect.w -= boss.offset_rect;
+                        boss.model.w -= boss.offset;
+                    }
+                }
+            if (boss.second_phase)
+                if (bullet.bullet_mas[i].y <= boss.weak_point_center.y + boss.model.h / 3 * 2 and bullet.bullet_mas[i].y + bullet.size_y >= boss.weak_point_center.y)
+                    if (bullet.bullet_mas[i].x <= boss.weak_point_center.x + boss.offset and bullet.bullet_mas[i].x + bullet.size_x >= boss.weak_point_center.x)
+                    {
+                        boss.hp_center -= bullet.dmg;
+                        boss.center.w -= boss.offset / 30 * bullet.dmg;
+                        if (boss.center.w < 0)
+                            boss.center.w = 0;
+                        bullet.active_bullet[i] = 0;
+                        if (boss.hp_center <= 0)
+                        {
+                            Start_Explosion(boss.weak_point_center, exp[2], frame[2], cur_time[2]);
+                        }
+                    }
+        }
 }
 
 SDL_Texture* Load_Texture(const char* name, SDL_Rect * rect)
@@ -372,6 +448,28 @@ SDL_Texture* Realloc_Memory(Enemy enemies[], SDL_Rect** explosion_model, SDL_Rec
     return exp;
 }
 
+SDL_Texture* Boss_Memory(SDL_Rect** explosion_model, SDL_Rect** pos, int** frame, int** cur_time, int** stop_animation)
+{
+    explosion_model[0] = (SDL_Rect*)realloc(explosion_model[0], sizeof(SDL_Rect) * 3);
+    pos[0] = (SDL_Rect*)realloc(pos[0], sizeof(SDL_Rect) * 3);
+    frame[0] = (int*)realloc(frame[0], sizeof(int) * 3);
+    cur_time[0] = (int*)realloc(cur_time[0], sizeof(int) * 3);
+    stop_animation[0] = (int*)realloc(stop_animation[0], sizeof(int) * 3);
+    for (int j = 0; j < 3; j++)
+    {
+        frame[0][j] = INT_MIN;
+        cur_time[0][j] = INT_MIN;
+        stop_animation[0][j] = 0;
+        pos[0][j] = { 0, 0, 0, 0 };
+    }
+    SDL_Rect rect = { 0, 0, 0, 0 };
+    SDL_Texture* exp = Load_Texture("explosion.png", &rect);
+    rect.w = rect.h;
+        for (int j = 0; j < 3; j++)
+            pos[0][j] = rect;
+    return exp;
+}
+
 void Free_Memory(Enemy enemies[], SDL_Rect** explosion_model, SDL_Rect** pos, int** frame, int** cur_time, int** stop_animation)
 {
     for (int i = 0; i < 5; i++)
@@ -470,11 +568,11 @@ void Load_Save(Player& ship, const char* filename, int& ship_type, int &score, i
 }
 
 void Level_Play(bool & get_enemies, int wave_1[], int wave_2[], Enemy enemies[], SDL_Texture** exp, SDL_Rect** explosion_model, SDL_Rect** pos,
-    int** frame, int** cur_time, int** stop_animation, int collision[], bool & is_new_wave, int & new_wave_time, bool &is_not_enemies, int &next, int &level_choose)
+    int** frame, int** cur_time, int** stop_animation, int collision[], bool & is_new_wave, int & new_wave_time, bool &is_not_enemies, int &next, int &level_choose, const char * level)
 {
     if (not get_enemies)
     {
-        Get_Enemies_In_Wave(wave_1, wave_2, "level_1.txt");
+        Get_Enemies_In_Wave(wave_1, wave_2, level);
         Level(enemies, wave_1);
         SDL_DestroyTexture(*exp);
         *exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
@@ -504,27 +602,25 @@ void Level_Play(bool & get_enemies, int wave_1[], int wave_2[], Enemy enemies[],
     }
 }
 
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
     system("chcp 1251 > 0");
     srand(time(0));
     const Uint8* state = SDL_GetKeyboardState(NULL);
     SDL_Event events;
     Player ship;
-    Enemy enemies[5] = {0};
+    Enemy enemies[5] = { 0 };
     weapon bullet;
     Enemy_Bullet enemy_bullet;
     Planet planet;
+    Boss boss;
     bool is_running = true, is_free = false, is_new_wave = false, is_cooldown = true, is_game = true, is_record = false;
     int wave_1[5], wave_2[5];
     int score = 0, ship_type = 0, key = 0;
     const int n = 6;
     int score_mass[n] = { 0 };
     int level = 1;
-    char level_char[12] = "level_.txt";
-    sprintf_s(level_char, "level_%i.txt", level);
     Get_Max_Score(score_mass, n, "score_records.txt");
-    Get_Enemies_In_Wave(wave_1, wave_2, level_char);
     int level_1 = 1, level_2 = 0, level_3 = 0, level_4 = 0, level_5 = 0, level_choose, save_choose = 0;
     do
     {
@@ -557,7 +653,7 @@ int main(int argc, char* argv[])
         {
             printf("Введите ячейку сохранения: ");
             scanf_s("%i", &save_choose);
-        } while (save_choose < 1 and save_choose > 3);
+        } while (save_choose < 1 or save_choose > 3);
         switch (save_choose)
         {
         case 1:
@@ -587,7 +683,7 @@ int main(int argc, char* argv[])
     Level(enemies, wave_1);
     int last_time = SDL_GetTicks(), new_time = 0, dt = 0, new_wave_time = 0;
     SDL_Rect** pos = (SDL_Rect**)malloc(sizeof(SDL_Rect*) * 5);
-    SDL_Rect** explosion_model = (SDL_Rect**)malloc(sizeof(SDL_Rect*)*5);
+    SDL_Rect** explosion_model = (SDL_Rect**)malloc(sizeof(SDL_Rect*) * 5);
     int** frame = (int**)malloc(sizeof(int*) * 5);
     int** cur_time = (int**)malloc(sizeof(int*) * 5);
     int** stop_animation = (int**)malloc(sizeof(int*) * 5);
@@ -601,7 +697,7 @@ int main(int argc, char* argv[])
     SDL_Texture* score_texture = NULL;
     SDL_Rect score_rect = { 0, 0, 0, 0 };
     char score_str[50] = "SCORE: %i";
-    TTF_Font * record_font = TTF_OpenFont("calibri.ttf", 75);
+    TTF_Font* record_font = TTF_OpenFont("calibri.ttf", 75);
     SDL_Texture* first = NULL;
     SDL_Texture* second = NULL;
     SDL_Texture* third = NULL;
@@ -617,6 +713,7 @@ int main(int argc, char* argv[])
     char cur_score[50] = "CURRENT: %i";
     int over = 0;
     bool is_not_enemies = false, get_enemies = false;
+    bool is_boss = false;
     while (is_running)
     {
         while (is_game)
@@ -672,177 +769,195 @@ int main(int argc, char* argv[])
                 is_game = true;
                 break;
             case 1:
-                Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_2, level_choose);
+                Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_2, level_choose, "level_1.txt");
                 break;
             case 2:
-                Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_3, level_choose);
+                Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_3, level_choose, "level_2.txt");
                 break;
             case 3:
-                Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_4, level_choose);
+                Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_4, level_choose, "level_3.txt");
                 break;
             case 4:
-                Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_5, level_choose);
+                Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_5, level_choose, "level_4.txt");
                 break;
-            }
-           
-            is_not_enemies = Is_Not_Enemies_In_Screen(enemies);
-            if (is_not_enemies and not is_new_wave)
-                new_wave_time += dt;
-            if (is_not_enemies and is_new_wave)
-                new_wave_time += dt;
-
-            if (is_running)
-            {
-                Get_Time(new_time, last_time, dt);
-
-                if (not Is_Cooldown_Now(bullet, dt))
-                    is_cooldown = false;
-
-                sprintf_s(hp_str, "HP: %i", ship.hp);
-                if (hp_texture != NULL)
-                    SDL_DestroyTexture(hp_texture);
-                hp_texture = Load_Texture_Font(hp_str, hp_font, &hp_rect, { 255, 255, 255, 255 });
-                hp_rect.x = 10;
-                hp_rect.y = win_height - 50;
-
-                sprintf_s(score_str, "SCORE: %i", score);
-                if (score_texture != NULL)
-                    SDL_DestroyTexture(score_texture);
-                score_texture = Load_Texture_Font(score_str, score_font, &score_rect, { 255, 255, 255, 255 });
-                score_rect.x = 10;
-                score_rect.y = 10;
-
-                Player_Movement(state, ship, dt, planet, stars_number, stars_mass);
-                Meteorite_Movement(enemies[0], ship, dt);
-                Ship_Movement(enemies[1], ship, dt);
-                Explosion_Ship_Movement(enemies[2], ship, dt);
-                Changing_Ship_Moving(enemies[3], ship, dt);
-                Shooting_Ship_Movement(enemies[4], ship, dt, enemy_bullet);
-                bullet_movement(bullet, dt);
-                Enemy_Bullet_Movement(enemy_bullet, dt);
-                Collision_Player_And_Enemy(ship, enemies, explosion_model, frame, cur_time, score);
-                Collision_Bullet_And_Enemy(ship, bullet, enemies, explosion_model, frame, cur_time, score);
-                Collision_Player_And_Bullet(ship, enemy_bullet);
-                Collision_Player_And_Explosion(ship, enemies[2], explosion_model[2], collision);
-                Draw(ship, enemies, dt, bullet, planet, stars_number, stars_mass, speed, enemy_bullet);
-                Explosion_Animation(exp, pos, explosion_model, frame, cur_time, dt, enemies, stop_animation);
-                SDL_RenderCopy(ren, hp_texture, NULL, &hp_rect);
-                SDL_RenderCopy(ren, score_texture, NULL, &score_rect);
-                SDL_RenderPresent(ren);
-            }
-        }
-        while (is_record)
-        {
-            while (SDL_PollEvent(&events))
-            {
-                switch (events.type)
+            case 5:
+                if (not is_boss)
                 {
-                case SDL_QUIT:
-                    Quit(is_running, events);
-                    if (not is_running)
-                        is_record = false;
-                    break;
-                case SDL_WINDOWEVENT:
-                    Change_Window(events);
+                    SDL_DestroyTexture(exp);
+                    exp = Boss_Memory(explosion_model, pos, frame, cur_time, stop_animation);
+                    for (int i = 0; i < 5; i++)
+                        wave_1[i] = 0;
+                    Level(enemies, wave_1);
+                    Create_Boss(boss);
+                    is_boss = true;
                     break;
                 }
             }
-            if (is_record)
-            {
-                Get_Time(new_time, last_time, dt);
 
-                over += dt;
-                if (over >= 10000)
-                    is_record = false;
-                SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
-                SDL_RenderClear(ren);
-                sprintf_s(first_score, "FIRST: %i", score_mass[0]);
-                if (first != NULL)
-                    SDL_DestroyTexture(first);
-                first = Load_Texture_Font(first_score, score_font, &score_mass_rect[0], { 255, 255, 255, 255 });
-                score_mass_rect[0].x = win_width / 2 - 50;
-                score_mass_rect[0].y = win_height / 7;
-                SDL_RenderCopy(ren, first, NULL, &score_mass_rect[0]);
+                is_not_enemies = Is_Not_Enemies_In_Screen(enemies);
+                if (is_not_enemies and not is_new_wave)
+                    new_wave_time += dt;
+                if (is_not_enemies and is_new_wave)
+                    new_wave_time += dt;
 
-                sprintf_s(second_score, "SECOND: %i", score_mass[1]);
-                if (second != NULL)
-                    SDL_DestroyTexture(second);
-                second = Load_Texture_Font(second_score, score_font, &score_mass_rect[1], { 255, 255, 255, 255 });
-                score_mass_rect[1].x = win_width / 2 - 50;
-                score_mass_rect[1].y = win_height / 7 * 2;
-                SDL_RenderCopy(ren, second, NULL, &score_mass_rect[1]);
+                if (is_running)
+                {
+                    Get_Time(new_time, last_time, dt);
 
-                sprintf_s(third_score, "THIRD: %i", score_mass[2]);
-                if (third != NULL)
-                    SDL_DestroyTexture(third);
-                third = Load_Texture_Font(third_score, score_font, &score_mass_rect[2], { 255, 255, 255, 255 });
-                score_mass_rect[2].x = win_width / 2 - 50;
-                score_mass_rect[2].y = win_height / 7 * 3;
-                SDL_RenderCopy(ren, third, NULL, &score_mass_rect[2]);
+                    if (not Is_Cooldown_Now(bullet, dt))
+                        is_cooldown = false;
 
-                sprintf_s(fourth_score, "FOURTH: %i", score_mass[3]);
-                if (fourth != NULL)
-                    SDL_DestroyTexture(fourth);
-                fourth = Load_Texture_Font(fourth_score, score_font, &score_mass_rect[3], { 255, 255, 255, 255 });
-                score_mass_rect[3].x = win_width / 2 - 50;
-                score_mass_rect[3].y = win_height / 7 * 4;
-                SDL_RenderCopy(ren, fourth, NULL, &score_mass_rect[3]);
+                    sprintf_s(hp_str, "HP: %i", ship.hp);
+                    if (hp_texture != NULL)
+                        SDL_DestroyTexture(hp_texture);
+                    hp_texture = Load_Texture_Font(hp_str, hp_font, &hp_rect, { 255, 255, 255, 255 });
+                    hp_rect.x = 10;
+                    hp_rect.y = win_height - 50;
 
-                sprintf_s(fifth_score, "FIFTH: %i", score_mass[4]);
-                if (fifth != NULL)
-                    SDL_DestroyTexture(fifth);
-                fifth = Load_Texture_Font(fifth_score, score_font, &score_mass_rect[4], { 255, 255, 255, 255 });
-                score_mass_rect[4].x = win_width / 2 - 50;
-                score_mass_rect[4].y = win_height / 7 * 5;
-                SDL_RenderCopy(ren, fifth, NULL, &score_mass_rect[4]);
+                    sprintf_s(score_str, "SCORE: %i", score);
+                    if (score_texture != NULL)
+                        SDL_DestroyTexture(score_texture);
+                    score_texture = Load_Texture_Font(score_str, score_font, &score_rect, { 255, 255, 255, 255 });
+                    score_rect.x = 10;
+                    score_rect.y = 10;
 
-                sprintf_s(cur_score, "CURRENT: %i", score);
-                if (score_texture_2 != NULL)
-                    SDL_DestroyTexture(score_texture);
-                score_texture_2 = Load_Texture_Font(cur_score, score_font, &score_mass_rect[5], { 255, 255, 255, 255 });
-                score_mass_rect[5].x = win_width / 2 - 50;
-                score_mass_rect[5].y = win_height / 7 * 6;
-                SDL_RenderCopy(ren, score_texture_2, NULL, &score_mass_rect[5]);
-
-                SDL_RenderPresent(ren);
+                    Player_Movement(state, ship, dt, planet, stars_number, stars_mass);
+                    Meteorite_Movement(enemies[0], ship, dt);
+                    Ship_Movement(enemies[1], ship, dt);
+                    Explosion_Ship_Movement(enemies[2], ship, dt);
+                    Changing_Ship_Moving(enemies[3], ship, dt);
+                    Shooting_Ship_Movement(enemies[4], ship, dt, enemy_bullet);
+                    bullet_movement(bullet, dt);
+                    Boss_Movement(boss);
+                    Enemy_Bullet_Movement(enemy_bullet, dt);
+                    Collision_Player_And_Enemy(ship, enemies, explosion_model, frame, cur_time, score);
+                    Collision_Bullet_And_Enemy(ship, bullet, enemies, explosion_model, frame, cur_time, score);
+                    Collision_Player_And_Bullet(ship, enemy_bullet);
+                    Collision_Player_And_Explosion(ship, enemies[2], explosion_model[2], collision);
+                    Collision_Bullet_And_Boss(bullet, boss, explosion_model[0], frame[0], cur_time[0], score);
+                    Draw(ship, enemies, dt, bullet, planet, stars_number, stars_mass, speed, enemy_bullet, boss);
+                    if (level_choose == 5)
+                        Boss_Explosion(exp, pos, explosion_model, frame, cur_time, dt, stop_animation);
+                    else
+                        Explosion_Animation(exp, pos, explosion_model, frame, cur_time, dt, enemies, stop_animation);
+                    SDL_RenderCopy(ren, hp_texture, NULL, &hp_rect);
+                    SDL_RenderCopy(ren, score_texture, NULL, &score_rect);
+                    SDL_RenderPresent(ren);
+                }
             }
+            while (is_record)
+            {
+                while (SDL_PollEvent(&events))
+                {
+                    switch (events.type)
+                    {
+                    case SDL_QUIT:
+                        Quit(is_running, events);
+                        if (not is_running)
+                            is_record = false;
+                        break;
+                    case SDL_WINDOWEVENT:
+                        Change_Window(events);
+                        break;
+                    }
+                }
+                if (is_record)
+                {
+                    Get_Time(new_time, last_time, dt);
+
+                    over += dt;
+                    if (over >= 10000)
+                        is_record = false;
+                    SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+                    SDL_RenderClear(ren);
+                    sprintf_s(first_score, "FIRST: %i", score_mass[0]);
+                    if (first != NULL)
+                        SDL_DestroyTexture(first);
+                    first = Load_Texture_Font(first_score, score_font, &score_mass_rect[0], { 255, 255, 255, 255 });
+                    score_mass_rect[0].x = win_width / 2 - 50;
+                    score_mass_rect[0].y = win_height / 7;
+                    SDL_RenderCopy(ren, first, NULL, &score_mass_rect[0]);
+
+                    sprintf_s(second_score, "SECOND: %i", score_mass[1]);
+                    if (second != NULL)
+                        SDL_DestroyTexture(second);
+                    second = Load_Texture_Font(second_score, score_font, &score_mass_rect[1], { 255, 255, 255, 255 });
+                    score_mass_rect[1].x = win_width / 2 - 50;
+                    score_mass_rect[1].y = win_height / 7 * 2;
+                    SDL_RenderCopy(ren, second, NULL, &score_mass_rect[1]);
+
+                    sprintf_s(third_score, "THIRD: %i", score_mass[2]);
+                    if (third != NULL)
+                        SDL_DestroyTexture(third);
+                    third = Load_Texture_Font(third_score, score_font, &score_mass_rect[2], { 255, 255, 255, 255 });
+                    score_mass_rect[2].x = win_width / 2 - 50;
+                    score_mass_rect[2].y = win_height / 7 * 3;
+                    SDL_RenderCopy(ren, third, NULL, &score_mass_rect[2]);
+
+                    sprintf_s(fourth_score, "FOURTH: %i", score_mass[3]);
+                    if (fourth != NULL)
+                        SDL_DestroyTexture(fourth);
+                    fourth = Load_Texture_Font(fourth_score, score_font, &score_mass_rect[3], { 255, 255, 255, 255 });
+                    score_mass_rect[3].x = win_width / 2 - 50;
+                    score_mass_rect[3].y = win_height / 7 * 4;
+                    SDL_RenderCopy(ren, fourth, NULL, &score_mass_rect[3]);
+
+                    sprintf_s(fifth_score, "FIFTH: %i", score_mass[4]);
+                    if (fifth != NULL)
+                        SDL_DestroyTexture(fifth);
+                    fifth = Load_Texture_Font(fifth_score, score_font, &score_mass_rect[4], { 255, 255, 255, 255 });
+                    score_mass_rect[4].x = win_width / 2 - 50;
+                    score_mass_rect[4].y = win_height / 7 * 5;
+                    SDL_RenderCopy(ren, fifth, NULL, &score_mass_rect[4]);
+
+                    sprintf_s(cur_score, "CURRENT: %i", score);
+                    if (score_texture_2 != NULL)
+                        SDL_DestroyTexture(score_texture);
+                    score_texture_2 = Load_Texture_Font(cur_score, score_font, &score_mass_rect[5], { 255, 255, 255, 255 });
+                    score_mass_rect[5].x = win_width / 2 - 50;
+                    score_mass_rect[5].y = win_height / 7 * 6;
+                    SDL_RenderCopy(ren, score_texture_2, NULL, &score_mass_rect[5]);
+
+                    SDL_RenderPresent(ren);
+                }
+            }
+            if (not is_game and not is_record)
+                is_running = false;
         }
-        if (not is_game and not is_record)
-            is_running = false;
-    }
-    
-    Sort_Records(score_mass, n);
-    Save_Records(score_mass, n, "score_records.txt");
-   /* do
-    {
-        printf("В какую ячейку сохранить: ");
-        scanf_s("%i", &save_choose);
-    } while (save_choose < 1 or save_choose > 3);
-    switch (save_choose)
-    {
-    case 1:
-        Save(ship, "save_1.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
-        break;
-    case 2:
-        Save(ship, "save_2.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
-        break;
-    case 3:
-        Save(ship, "save_3.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
-        break;
-    }*/
-    Free_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
-    SDL_DestroyTexture(ship.texture);
-    SDL_DestroyTexture(bullet.texture);
-    SDL_DestroyTexture(enemy_bullet.texture);
-    SDL_DestroyTexture(exp);
-    SDL_DestroyTexture(planet.texture);
-    SDL_DestroyTexture(hp_texture);
-    SDL_DestroyTexture(score_texture);
-    SDL_DestroyTexture(first);
-    SDL_DestroyTexture(second);
-    SDL_DestroyTexture(third);
-    SDL_DestroyTexture(fourth);
-    SDL_DestroyTexture(fifth);
-    deinit();
-    return 0;
+
+        Sort_Records(score_mass, n);
+        Save_Records(score_mass, n, "score_records.txt");
+        /* do
+         {
+             printf("В какую ячейку сохранить: ");
+             scanf_s("%i", &save_choose);
+         } while (save_choose < 1 or save_choose > 3);
+         switch (save_choose)
+         {
+         case 1:
+             Save(ship, "save_1.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
+             break;
+         case 2:
+             Save(ship, "save_2.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
+             break;
+         case 3:
+             Save(ship, "save_3.txt", ship_type, score, level_1, level_2, level_3, level_4, level_5);
+             break;
+         }*/
+        Free_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
+        SDL_DestroyTexture(ship.texture);
+        SDL_DestroyTexture(bullet.texture);
+        SDL_DestroyTexture(enemy_bullet.texture);
+        SDL_DestroyTexture(exp);
+        SDL_DestroyTexture(planet.texture);
+        SDL_DestroyTexture(hp_texture);
+        SDL_DestroyTexture(score_texture);
+        SDL_DestroyTexture(first);
+        SDL_DestroyTexture(second);
+        SDL_DestroyTexture(third);
+        SDL_DestroyTexture(fourth);
+        SDL_DestroyTexture(fifth);
+        SDL_DestroyTexture(boss.texture);
+        deinit();
+        return 0;
 }

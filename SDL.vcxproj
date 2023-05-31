@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="modules\Background.cpp" />
+    <ClCompile Include="modules\Boss.cpp" />
     <ClCompile Include="modules\Enemies.cpp" />
     <ClCompile Include="modules\Game.cpp" />
     <ClCompile Include="modules\Player.cpp" />
@@ -27,6 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers\Background.h" />
+    <ClInclude Include="headers\Boss.h" />
     <ClInclude Include="headers\Enemies.h" />
     <ClInclude Include="headers\Game.h" />
     <ClInclude Include="headers\Player.h" />
