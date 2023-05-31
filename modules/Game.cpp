@@ -270,6 +270,8 @@ void Collision_Bullet_And_Boss(weapon& bullet, Boss& boss, SDL_Rect* exp, int* f
                     bullet.active_bullet[i] = 0;
                     if (boss.hp_left <= 0)
                     {
+                        boss.speed_x = fabs(boss.speed_x) + 50;
+                        boss.speed_y = fabs(boss.speed_y) + 50;
                         Start_Explosion(boss.weak_point_left, exp[0], frame[0], cur_time[0]);
                         boss.rect.x += boss.offset_rect;
                         boss.rect.w -= boss.offset_rect;
@@ -287,6 +289,8 @@ void Collision_Bullet_And_Boss(weapon& bullet, Boss& boss, SDL_Rect* exp, int* f
                     bullet.active_bullet[i] = 0;
                     if (boss.hp_right <= 0)
                     {
+                        boss.speed_x = fabs(boss.speed_x) + 50;
+                        boss.speed_y = fabs(boss.speed_y) + 50;
                         Start_Explosion(boss.weak_point_right, exp[1], frame[1], cur_time[1]);
                         boss.rect.w -= boss.offset_rect;
                         boss.model.w -= boss.offset;
@@ -307,6 +311,13 @@ void Collision_Bullet_And_Boss(weapon& bullet, Boss& boss, SDL_Rect* exp, int* f
                         }
                     }
         }
+}
+
+void Collision_Player_And_Boss(Player& ship, Boss& boss)
+{
+    if (ship.model.y <= boss.model.y + boss.model.h and ship.model.y + ship.size >= boss.model.y)
+        if (ship.model.x <= boss.model.x + boss.model.w and ship.model.x + ship.size >= boss.model.x)
+            ship.hp = 0;
 }
 
 SDL_Texture* Load_Texture(const char* name, SDL_Rect * rect)
@@ -828,13 +839,14 @@ int main(int argc, char* argv[])
                     Changing_Ship_Moving(enemies[3], ship, dt);
                     Shooting_Ship_Movement(enemies[4], ship, dt, enemy_bullet);
                     bullet_movement(bullet, dt);
-                    Boss_Movement(boss);
+                    Boss_Movement(boss, dt);
                     Enemy_Bullet_Movement(enemy_bullet, dt);
                     Collision_Player_And_Enemy(ship, enemies, explosion_model, frame, cur_time, score);
                     Collision_Bullet_And_Enemy(ship, bullet, enemies, explosion_model, frame, cur_time, score);
                     Collision_Player_And_Bullet(ship, enemy_bullet);
                     Collision_Player_And_Explosion(ship, enemies[2], explosion_model[2], collision);
                     Collision_Bullet_And_Boss(bullet, boss, explosion_model[0], frame[0], cur_time[0], score);
+                    Collision_Player_And_Boss(ship, boss);
                     Draw(ship, enemies, dt, bullet, planet, stars_number, stars_mass, speed, enemy_bullet, boss);
                     if (level_choose == 5)
                         Boss_Explosion(exp, pos, explosion_model, frame, cur_time, dt, stop_animation);

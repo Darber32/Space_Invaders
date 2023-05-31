@@ -11,10 +11,13 @@ struct Boss
 	int hp_left, hp_right, hp_center, offset, offset_rect;
 	bool second_phase;
 	SDL_Rect left, right, center;
+	double speed_x, speed_y;
 };
 
 void Create_Boss(Boss& boss)
 {
+	boss.speed_x = 200;
+	boss.speed_y = 50;
 	boss.second_phase = false;
 	boss.texture = Load_Texture("boss.png", &boss.rect);
 	boss.offset_rect = boss.rect.w / 3;
@@ -35,7 +38,7 @@ void Create_Boss(Boss& boss)
 	boss.center = { (int)boss.pos_x + boss.offset, (int)boss.pos_y + 15, boss.size_x - 2 * boss.offset, 10 };
 }
 
-void Boss_Movement(Boss& boss)
+void Boss_Movement(Boss& boss, int dt)
 {
 	if (boss.hp_left <= 0 and boss.weak_point_left.y <= win_height)
 	{
@@ -56,6 +59,29 @@ void Boss_Movement(Boss& boss)
 		boss.center = { 0, win_height + 1, 0, 0 };
 	}
 	
+		boss.model.x += boss.speed_x * dt / 1000;
+		boss.left.x += boss.speed_x * dt / 1000;
+		boss.right.x += boss.speed_x * dt / 1000;
+		boss.center.x += boss.speed_x * dt / 1000;
+		boss.weak_point_left.x += boss.speed_x * dt / 1000;
+		boss.weak_point_right.x += boss.speed_x * dt / 1000;
+		boss.weak_point_center.x += boss.speed_x * dt / 1000;
+
+	if (boss.hp_left <= 0 or boss.hp_right <= 0 and not boss.second_phase)
+	{
+		boss.model.y += boss.speed_y * dt / 1000;
+		boss.left.y += boss.speed_y * dt / 1000;
+		boss.right.y += boss.speed_y * dt / 1000;
+		boss.center.y += boss.speed_y * dt / 1000;
+		boss.weak_point_left.y += boss.speed_y * dt / 1000;
+		boss.weak_point_right.y += boss.speed_y * dt / 1000;
+		boss.weak_point_center.y += boss.speed_y * dt / 1000;
+	}
+
+	if (boss.model.x < 0 or boss.model.x + boss.model.w > win_width)
+		boss.speed_x *= -1;
+	if (boss.model.y < 0 or boss.model.y + boss.model.h > win_height / 2)
+		boss.speed_y *= -1;
 }
 
 void Boss_Draw(Boss& boss)

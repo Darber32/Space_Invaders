@@ -12,10 +12,11 @@ struct Boss
 	int hp_left, hp_right, hp_center, offset, offset_rect;
 	bool second_phase;
 	SDL_Rect left, right, center;
+	double speed_x, speed_y;
 };
 
 void Create_Boss(Boss& boss);
 
-void Boss_Movement(Boss& boss);
+void Boss_Movement(Boss& boss, int dt);
 
 void Boss_Draw(Boss& boss);
