@@ -108,8 +108,8 @@ void Boss_Movement(Boss& boss, int dt)
 			boss.warning_time += dt;
 			if (boss.warning_up.y > win_height)
 			{
-				boss.warning_up = { 0, rand() % (win_height / 2 - 100), 100, 100};
-				boss.warning_down = { 0, rand() % (win_height - 100 - win_height / 2) + win_height / 2, 100, 100};
+				boss.warning_up = { (rand() % 2) * (win_width - 100), rand() % (win_height / 2 - 100), 100, 100};
+				boss.warning_down = { (rand() % 2) * (win_width - 100), rand() % (win_height - 100 - win_height / 2) + win_height / 2, 100, 100};
 			}
 		}
 		if (boss.warning_time >= 3000 and boss.laser_time < 4000)
