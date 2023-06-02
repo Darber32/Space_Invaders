@@ -76,5 +76,5 @@ void bullet_draw(weapon bullet)
 {
     for (int i = 0; i < bullet.count; i++)
         if (bullet.active_bullet[i] == 1)
-            SDL_RenderCopy(ren, bullet.texture, NULL, &bullet.bullet_mas[i]);
+             SDL_RenderCopy(ren, bullet.texture, NULL, &bullet.bullet_mas[i]);
 }

@@ -445,7 +445,7 @@ void Create_Shooting_Ship(Enemy& ship, int count)
 	{
 		ship.hp[i] = 7;
 		ship.x_pos = rand() % (win_width - ship.size + 1);
-		ship.y_pos -= 300;
+		ship.y_pos -= 150;
 		ship.enemy_mass[i] = { (int)ship.x_pos, (int)ship.y_pos, ship.size, ship.size };
 		ship.cur_time[i] = 0;
 	}

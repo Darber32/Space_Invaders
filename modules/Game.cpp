@@ -112,12 +112,11 @@ void Draw(Player& ship, Enemy enemies[], int dt, weapon bullet, Planet &planet, 
     Explosion_Ship_Draw(enemies[2], dt);
     Changing_Ship_Draw(enemies[3]);
     Shooting_Ship_Draw(enemies[4]);
-    ship.model = { int(ship.x_pos), (int)ship.y_pos, ship.size, ship.size };
-    SDL_RenderCopy(ren, ship.texture, NULL, &ship.model);
     bullet_draw(bullet);
     Enemy_Bullet_Draw(enemy_bullet);
     Boss_Draw(boss);
-
+    ship.model = { int(ship.x_pos), (int)ship.y_pos, ship.size, ship.size };
+    SDL_RenderCopy(ren, ship.texture, NULL, &ship.model);
 }
 
 void Explosion_Animation(SDL_Texture* texture, SDL_Rect **pos, SDL_Rect ** model, int ** frame, int ** cur_time, int dt, Enemy enemy[], int ** stop)
@@ -318,6 +317,22 @@ void Collision_Player_And_Boss(Player& ship, Boss& boss)
     if (ship.model.y <= boss.model.y + boss.model.h and ship.model.y + ship.size >= boss.model.y)
         if (ship.model.x <= boss.model.x + boss.model.w and ship.model.x + ship.size >= boss.model.x)
             ship.hp = 0;
+}
+
+void Collision_Player_And_Laser(Player& ship, Boss& boss)
+{
+    if (ship.model.y <= boss.laser_model_down.y + 100 and ship.model.y + ship.size >= boss.laser_model_down.y)
+        if (boss.collision_down == 0)
+        {
+            boss.collision_down++;
+            ship.hp -= 5;
+        }
+    if (ship.model.y <= boss.laser_model_up.y + 100 and ship.model.y + ship.size >= boss.laser_model_up.y)
+        if (boss.collision_up == 0)
+        {
+            boss.collision_up++;
+            ship.hp -= 5;
+        }
 }
 
 SDL_Texture* Load_Texture(const char* name, SDL_Rect * rect)
@@ -745,7 +760,7 @@ int main(int argc, char* argv[])
                     switch (events.key.keysym.scancode)
                     {
                     case SDL_SCANCODE_SPACE:
-                        for (int i = 0; i < bullet.count; i++)
+                         for (int i = 0; i < bullet.count; i++)
                         {
                             if (bullet.active_bullet[i] == 0 and not is_cooldown)
                             {
@@ -839,14 +854,19 @@ int main(int argc, char* argv[])
                     Changing_Ship_Moving(enemies[3], ship, dt);
                     Shooting_Ship_Movement(enemies[4], ship, dt, enemy_bullet);
                     bullet_movement(bullet, dt);
-                    Boss_Movement(boss, dt);
+                    if (level_choose == 5)
+                        Boss_Movement(boss, dt);
                     Enemy_Bullet_Movement(enemy_bullet, dt);
                     Collision_Player_And_Enemy(ship, enemies, explosion_model, frame, cur_time, score);
                     Collision_Bullet_And_Enemy(ship, bullet, enemies, explosion_model, frame, cur_time, score);
                     Collision_Player_And_Bullet(ship, enemy_bullet);
                     Collision_Player_And_Explosion(ship, enemies[2], explosion_model[2], collision);
-                    Collision_Bullet_And_Boss(bullet, boss, explosion_model[0], frame[0], cur_time[0], score);
-                    Collision_Player_And_Boss(ship, boss);
+                    if (level_choose == 5)
+                    {
+                        Collision_Bullet_And_Boss(bullet, boss, explosion_model[0], frame[0], cur_time[0], score);
+                        Collision_Player_And_Boss(ship, boss); 
+                        Collision_Player_And_Laser(ship, boss);
+                    }
                     Draw(ship, enemies, dt, bullet, planet, stars_number, stars_mass, speed, enemy_bullet, boss);
                     if (level_choose == 5)
                         Boss_Explosion(exp, pos, explosion_model, frame, cur_time, dt, stop_animation);
@@ -970,6 +990,8 @@ int main(int argc, char* argv[])
         SDL_DestroyTexture(fourth);
         SDL_DestroyTexture(fifth);
         SDL_DestroyTexture(boss.texture);
+        SDL_DestroyTexture(boss.laser_texture);
+        SDL_DestroyTexture(boss.warning_texture);
         deinit();
         return 0;
 }
