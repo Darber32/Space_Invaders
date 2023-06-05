@@ -696,7 +696,6 @@ int main(int argc, char* argv[])
     }
 
     int mode_choose, wave_count = 0;
-    int meteorite_count = 0, move_ship_count = 0, exp_ship_count = 0, shoot_ship_count = 0, fall_ship_count = 0;
 
     do
     {
@@ -704,7 +703,11 @@ int main(int argc, char* argv[])
 2 - бесконечный режим\n");
         scanf_s("%i", &mode_choose);
         if (mode_choose == 2)
+        {
             wave_count = 1;
+            for (int i = 0; i < 5; i++)
+                wave_1[i] = 0;
+        }
     } while (mode_choose < 1 or mode_choose > 2);
     
     Create_Stars(stars_number, stars_mass, speed);
@@ -742,8 +745,12 @@ int main(int argc, char* argv[])
     char fourth_score[50] = "FOURTH: %i";
     char fifth_score[50] = "FIFTH: %i";
     char cur_score[50] = "CURRENT: %i";
+    TTF_Font* wave_font = TTF_OpenFont("calibri.ttf", 50);
+    SDL_Texture* wave_texture = NULL;
+    SDL_Rect wave_rect = { 0, 0, 0, 0 };
+    char wave_str[20] = "WAVE %i COMPLETE";
     int over = 0;
-    bool is_not_enemies = false, get_enemies = false;
+    bool is_not_enemies_for_time = false, is_enemies = false;
     bool is_boss = false;
     while (is_running)
     {
@@ -787,6 +794,10 @@ int main(int argc, char* argv[])
                 is_record = true;
             }
 
+            is_not_enemies_for_time = Is_Not_Enemies_In_Screen(enemies);
+            if (is_not_enemies_for_time)
+                new_wave_time += dt;
+
             switch (mode_choose)
             {
             case 1:
@@ -814,16 +825,16 @@ int main(int argc, char* argv[])
                     is_game = true;
                     break;
                 case 1:
-                    Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_2, level_choose, "level_1.txt");
+                    Level_Play(is_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies_for_time, level_2, level_choose, "level_1.txt");
                     break;
                 case 2:
-                    Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_3, level_choose, "level_2.txt");
+                    Level_Play(is_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies_for_time, level_3, level_choose, "level_2.txt");
                     break;
                 case 3:
-                    Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_4, level_choose, "level_3.txt");
+                    Level_Play(is_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies_for_time, level_4, level_choose, "level_3.txt");
                     break;
                 case 4:
-                    Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_5, level_choose, "level_4.txt");
+                    Level_Play(is_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies_for_time, level_5, level_choose, "level_4.txt");
                     break;
                 case 5:
                     if (not is_boss)
@@ -840,43 +851,43 @@ int main(int argc, char* argv[])
                     }
                 break;
             case 2:
-
-                if (not get_enemies)
+                if (not is_enemies)
                 {
-                    meteorite_count += 2;
+                    wave_1[0] += 2;
                     if (wave_count >= 3)
-                        move_ship_count += 2;
+                        wave_1[1] += 2;
                     if (wave_count >= 5)
-                        exp_ship_count += 1;
+                        wave_1[2] += 1;
                     if (wave_count >= 7)
-                        fall_ship_count += 1;
+                        wave_1[3] += 1;
                     if (wave_count >= 10)
-                        shoot_ship_count += 1;
-                    wave_1[0] = meteorite_count;
-                    wave_1[1] = move_ship_count;
-                    wave_1[2] = exp_ship_count;
-                    wave_1[3] = fall_ship_count;
-                    wave_1[4] = shoot_ship_count;
+                        wave_1[4] += 1;
                     Level(enemies, wave_1);
                     SDL_DestroyTexture(exp);
                     exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
-                    get_enemies = true;
+                    is_enemies = true;
+                    is_not_enemies_for_time = false;
+                }
+
+                if (is_not_enemies_for_time)
+                {
+                    sprintf_s(wave_str, "WAVE %i COMPLETE", wave_count);
+                    if (wave_texture != NULL)
+                        SDL_DestroyTexture(wave_texture);
+                    wave_texture = Load_Texture_Font(wave_str, wave_font, &wave_rect, { 255, 255, 255, 255 });
+                    wave_rect.x = win_width / 2 - 175;
+                    wave_rect.y = win_height / 2 - 25;
                 }
 
                 if (new_wave_time >= 5000)
                 {
                     wave_count++;
-                    printf("wave %i started!\n", wave_count);
                     new_wave_time = 0;
-                    get_enemies = false;
+                    is_enemies = false;
                 }
 
                 break;
             }
-
-                is_not_enemies = Is_Not_Enemies_In_Screen(enemies);
-                if (is_not_enemies)
-                    new_wave_time += dt;
 
                 if (is_running)
                 {
@@ -926,6 +937,8 @@ int main(int argc, char* argv[])
                         Explosion_Animation(exp, pos, explosion_model, frame, cur_time, dt, enemies, stop_animation);
                     SDL_RenderCopy(ren, hp_texture, NULL, &hp_rect);
                     SDL_RenderCopy(ren, score_texture, NULL, &score_rect);
+                    if (is_not_enemies_for_time and mode_choose == 2)
+                        SDL_RenderCopy(ren, wave_texture, NULL, &wave_rect);
                     SDL_RenderPresent(ren);
                 }
             }
