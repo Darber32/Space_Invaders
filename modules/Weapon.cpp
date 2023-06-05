@@ -26,7 +26,7 @@ void bullet_create(weapon& bullet) {
     bullet.texture = Load_Texture("bullet.png", &bullet.rect);
     bullet.size_x = 20;
     bullet.size_y = 50;
-    bullet.dmg = 10;
+    bullet.dmg = 3;
     bullet.cd = 500;
     bullet.vy = 400;
     bullet.vx = 100;

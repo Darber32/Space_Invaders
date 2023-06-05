@@ -647,7 +647,7 @@ int main(int argc, char* argv[])
     int score_mass[n] = { 0 };
     int level = 1;
     Get_Max_Score(score_mass, n, "score_records.txt");
-    int level_1 = 1, level_2 = 0, level_3 = 0, level_4 = 0, level_5 = 0, level_choose, save_choose = 0;
+    int level_1 = 1, level_2 = 0, level_3 = 0, level_4 = 0, level_5 = 0, level_choose = -1, save_choose = 0;
     do
     {
         printf("Новая игра - 1.\n\
@@ -695,13 +695,18 @@ int main(int argc, char* argv[])
         break;
     }
 
+    int mode_choose, wave_count = 0;
+    int meteorite_count = 0, move_ship_count = 0, exp_ship_count = 0, shoot_ship_count = 0, fall_ship_count = 0;
+
     do
     {
-        printf("Введите номер уровня: ");
-        scanf_s("%i", &level_choose);
-        if (level_choose == 2 and level_2 == 0 or level_choose == 3 and level_3 == 0 or level_choose == 4 and level_4 == 0 or level_choose == 5 and level_5 == 0)
-            printf("Уровень не открыт. Пройдите предыдущие, чтобы открыть его\n");
-    } while ((level_choose < 1 or level_choose > 5) or (level_choose == 2 and level_2 == 0 or level_choose == 3 and level_3 == 0 or level_choose == 4 and level_4 == 0 or level_choose == 5 and level_5 == 0));
+        printf("1 - игра по уровням\n\
+2 - бесконечный режим\n");
+        scanf_s("%i", &mode_choose);
+        if (mode_choose == 2)
+            wave_count = 1;
+    } while (mode_choose < 1 or mode_choose > 2);
+    
     Create_Stars(stars_number, stars_mass, speed);
     bullet_create(bullet);
     Enemy_Bullet_Create(enemy_bullet);
@@ -782,48 +787,95 @@ int main(int argc, char* argv[])
                 is_record = true;
             }
 
-            switch (level_choose)
+            switch (mode_choose)
             {
-            case 0:
-                do
-                {
-                    printf("Введите номер уровня: ");
-                    scanf_s("%i", &level_choose);
-                    if (level_choose == 2 and level_2 == 0 or level_choose == 3 and level_3 == 0 or level_choose == 4 and level_4 == 0 or level_choose == 5 and level_5 == 0)
-                        printf("Уровень не открыт. Пройдите предыдущие, чтобы открыть его\n");
-                } while ((level_choose < 1 or level_choose > 5) or (level_choose == 2 and level_2 == 0 or level_choose == 3 and level_3 == 0 or level_choose == 4 and level_4 == 0 or level_choose == 5 and level_5 == 0));
-                is_game = true;
-                break;
             case 1:
-                Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_2, level_choose, "level_1.txt");
+                if (level_choose < 0 or level_choose > 5)
+                {
+                    do
+                    {
+                        printf("Введите номер уровня: ");
+                        scanf_s("%i", &level_choose);
+                        if (level_choose == 2 and level_2 == 0 or level_choose == 3 and level_3 == 0 or level_choose == 4 and level_4 == 0 or level_choose == 5 and level_5 == 0)
+                            printf("Уровень не открыт. Пройдите предыдущие, чтобы открыть его\n");
+                    } while ((level_choose < 1 or level_choose > 5) or (level_choose == 2 and level_2 == 0 or level_choose == 3 and level_3 == 0 or level_choose == 4 and level_4 == 0 or level_choose == 5 and level_5 == 0));
+                }
+
+                switch (level_choose)
+                {
+                case 0:
+                    do
+                    {
+                        printf("Введите номер уровня: ");
+                        scanf_s("%i", &level_choose);
+                        if (level_choose == 2 and level_2 == 0 or level_choose == 3 and level_3 == 0 or level_choose == 4 and level_4 == 0 or level_choose == 5 and level_5 == 0)
+                            printf("Уровень не открыт. Пройдите предыдущие, чтобы открыть его\n");
+                    } while ((level_choose < 1 or level_choose > 5) or (level_choose == 2 and level_2 == 0 or level_choose == 3 and level_3 == 0 or level_choose == 4 and level_4 == 0 or level_choose == 5 and level_5 == 0));
+                    is_game = true;
+                    break;
+                case 1:
+                    Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_2, level_choose, "level_1.txt");
+                    break;
+                case 2:
+                    Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_3, level_choose, "level_2.txt");
+                    break;
+                case 3:
+                    Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_4, level_choose, "level_3.txt");
+                    break;
+                case 4:
+                    Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_5, level_choose, "level_4.txt");
+                    break;
+                case 5:
+                    if (not is_boss)
+                    {
+                        SDL_DestroyTexture(exp);
+                        exp = Boss_Memory(explosion_model, pos, frame, cur_time, stop_animation);
+                        for (int i = 0; i < 5; i++)
+                            wave_1[i] = 0;
+                        Level(enemies, wave_1);
+                        Create_Boss(boss);
+                        is_boss = true;
+                        break;
+                        }
+                    }
                 break;
             case 2:
-                Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_3, level_choose, "level_2.txt");
-                break;
-            case 3:
-                Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_4, level_choose, "level_3.txt");
-                break;
-            case 4:
-                Level_Play(get_enemies, wave_1, wave_2, enemies, &exp, explosion_model, pos, frame, cur_time, stop_animation, collision, is_new_wave, new_wave_time, is_not_enemies, level_5, level_choose, "level_4.txt");
-                break;
-            case 5:
-                if (not is_boss)
+
+                if (not get_enemies)
                 {
-                    SDL_DestroyTexture(exp);
-                    exp = Boss_Memory(explosion_model, pos, frame, cur_time, stop_animation);
-                    for (int i = 0; i < 5; i++)
-                        wave_1[i] = 0;
+                    meteorite_count += 2;
+                    if (wave_count >= 3)
+                        move_ship_count += 2;
+                    if (wave_count >= 5)
+                        exp_ship_count += 1;
+                    if (wave_count >= 7)
+                        fall_ship_count += 1;
+                    if (wave_count >= 10)
+                        shoot_ship_count += 1;
+                    wave_1[0] = meteorite_count;
+                    wave_1[1] = move_ship_count;
+                    wave_1[2] = exp_ship_count;
+                    wave_1[3] = fall_ship_count;
+                    wave_1[4] = shoot_ship_count;
                     Level(enemies, wave_1);
-                    Create_Boss(boss);
-                    is_boss = true;
-                    break;
+                    SDL_DestroyTexture(exp);
+                    exp = Realloc_Memory(enemies, explosion_model, pos, frame, cur_time, stop_animation);
+                    get_enemies = true;
                 }
+
+                if (new_wave_time >= 5000)
+                {
+                    wave_count++;
+                    printf("wave %i started!\n", wave_count);
+                    new_wave_time = 0;
+                    get_enemies = false;
+                }
+
+                break;
             }
 
                 is_not_enemies = Is_Not_Enemies_In_Screen(enemies);
-                if (is_not_enemies and not is_new_wave)
-                    new_wave_time += dt;
-                if (is_not_enemies and is_new_wave)
+                if (is_not_enemies)
                     new_wave_time += dt;
 
                 if (is_running)
