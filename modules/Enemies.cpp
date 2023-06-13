@@ -23,6 +23,7 @@ struct Enemy_Bullet
 	SDL_Rect rect = { 0, 0, 0, 0 };
 	SDL_Texture* texture;
 	bool is_NULL;
+	int cur_frame_time = 0, max_frame_time = 200, frame = 0, max_frame = 4;
 };
 
 void Enemy_Animation(Enemy & enemy, int dt)
@@ -206,15 +207,16 @@ void Ship_Draw(Enemy& ship, int dt)
 void Create_Explosion_Ship(Enemy& ship, int count)
 {
 	ship.is_null = false;
-	ship.texture = Load_Texture("explosion_ship.jpg", &ship.rect);
+	ship.texture = Load_Texture("explosion_ship.png", &ship.rect);
+	ship.rect.w = ship.rect.w / 4;
 	ship.size = 80;
 	ship.score = 150;
 	ship.money = 15;
 	ship.count = count;
 	ship.hp = (int*)malloc(sizeof(int) * ship.count);
 	ship.enemy_mass = (SDL_Rect*)malloc(sizeof(SDL_Rect) * ship.count);
-	ship.frame_count = 0;
-	ship.max_frame_time = 0;
+	ship.frame_count = 4;
+	ship.max_frame_time = 300;
 	ship.x_offset = 0;
 	ship.speed = 150;
 	ship.x_speed = 0;
@@ -266,8 +268,9 @@ void Explosion_Ship_Movement(Enemy& ship, Player& player, int dt)
 void Explosion_Ship_Draw(Enemy& ship, int dt)
 {
 	if (not ship.is_null)
-		for (int i = 0; i < ship.count; i++)
-			SDL_RenderCopy(ren, ship.texture, NULL, &ship.enemy_mass[i]);
+		Enemy_Animation(ship, dt);
+		//for (int i = 0; i < ship.count; i++)
+			//SDL_RenderCopy(ren, ship.texture, NULL, &ship.enemy_mass[i]);
 	else if (ship.texture != NULL)
 	{
 		SDL_DestroyTexture(ship.texture);
@@ -362,7 +365,8 @@ void Changing_Ship_Draw(Enemy& ship)
 
 void Enemy_Bullet_Create(Enemy_Bullet& bullet)
 {
-	bullet.texture = Load_Texture("enemy_bullet.png", &bullet.rect);
+	bullet.texture = Load_Texture("enemy_bullet_test.png", &bullet.rect);
+	bullet.rect.h = bullet.rect.h / 4;
 	bullet.size_x = 20;
 	bullet.size_y = 60;
 	bullet.dmg = 1;
@@ -416,11 +420,18 @@ void Enemy_Bullet_Spawn(Enemy_Bullet& bullet, Enemy &ship)
 	}
 }
 
-void Enemy_Bullet_Draw(Enemy_Bullet &bullet)
+void Enemy_Bullet_Draw(Enemy_Bullet &bullet, int dt)
 {
+	bullet.cur_frame_time += dt;
+	if (bullet.cur_frame_time > bullet.max_frame_time)
+	{
+		bullet.cur_frame_time -= bullet.max_frame_time;
+		bullet.frame = (bullet.frame + 1) % bullet.max_frame;
+		bullet.rect.y = bullet.rect.h * bullet.frame;
+	}
 	for (int i = 0; i < bullet.count; i++)
 		if (bullet.active_bullet[i] == 1)
-			SDL_RenderCopy(ren, bullet.texture, NULL, &bullet.bullet_mas[i]);
+			SDL_RenderCopy(ren, bullet.texture, &bullet.rect, &bullet.bullet_mas[i]);
 }
 
 void Create_Shooting_Ship(Enemy& ship, int count)

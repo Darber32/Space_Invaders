@@ -22,6 +22,7 @@ struct Enemy_Bullet
 	SDL_Rect rect = { 0, 0, 0, 0 };
 	SDL_Texture* texture;
 	bool is_NULL;
+	int cur_frame_time = 0, max_frame_time = 200, frame = 0, max_frame = 4;
 };
 
 void Create_Meteorite(Enemy& meteorite, int count);
@@ -60,4 +61,4 @@ void Enemy_Bullet_Movement(Enemy_Bullet& bullet, int dt);
 
 void Enemy_Bullet_Spawn(Enemy_Bullet& bullet, Enemy &ship);
 
-void Enemy_Bullet_Draw(Enemy_Bullet& bullet);
+void Enemy_Bullet_Draw(Enemy_Bullet& bullet, int dt);

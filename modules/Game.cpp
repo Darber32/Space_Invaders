@@ -113,7 +113,7 @@ void Draw(Player& ship, Enemy enemies[], int dt, weapon bullet, Planet &planet, 
     Changing_Ship_Draw(enemies[3]);
     Shooting_Ship_Draw(enemies[4]);
     bullet_draw(bullet);
-    Enemy_Bullet_Draw(enemy_bullet);
+    Enemy_Bullet_Draw(enemy_bullet, dt);
     Boss_Draw(boss);
     ship.model = { int(ship.x_pos), (int)ship.y_pos, ship.size, ship.size };
     SDL_RenderCopy(ren, ship.texture, NULL, &ship.model);
